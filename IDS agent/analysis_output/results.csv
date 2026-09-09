@@ -1,0 +1,6 @@
+sample,action,expected,match,attack_label,justification
+normal_browsing,ALLOW,ALLOW,True,Normal traffic,R5 fired (default): no rule matched — stats fall within normal ranges.
+brute_force_ssh,BLOCK,BLOCK,True,Brute-force login attempt,R1 fired: 12 failed login attempts in this window (threshold 5) — consistent with credential guessing.
+port_scan,FLAG,FLAG,True,Network / port scan,R2 fired: 42 distinct hosts contacted (threshold 15) in a short window — consistent with a host or port sweep rather than normal single-destination traffic.
+data_exfiltration,FLAG,FLAG,True,Possible data exfiltration,"R3 fired: 8,500,000 bytes sent to an uncommon port (4444) — large outbound transfers on non-standard ports are a common exfiltration signature."
+dos_flood,FLAG,FLAG,True,Possible flood / DoS,R4 fired: 48.0 connections/second (threshold 20) — abnormally high connection rate.

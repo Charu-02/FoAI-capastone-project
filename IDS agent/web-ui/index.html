@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intrusion Detection Agent — Sense · Decide · Act</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10161a;
+    --panel:#171f24;
+    --panel-raised:#1d262c;
+    --line:#2a353c;
+    --paper:#efe9db;
+    --text:#dcd6c7;
+    --text-dim:#8b9299;
+    --amber:#e7a33e;
+    --teal:#4fb6a8;
+    --clay:#c25a4a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Source Serif 4', Georgia, serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  .wrap{max-width:920px;margin:0 auto;padding:56px 24px 120px;}
+
+  header.hero{margin-bottom:48px;}
+  .kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    margin-bottom:14px;
+  }
+  .kicker .arrow{color:var(--amber);}
+  h1{
+    font-size:38px;
+    font-weight:600;
+    line-height:1.15;
+    margin:0 0 18px;
+    color:#f3efe4;
+    max-width:16ch;
+  }
+  .lede{font-size:17px; color:var(--text-dim); max-width:58ch; margin:0;}
+
+  .peas{
+    margin-top:28px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .peas div{background:var(--panel); padding:12px 14px;}
+  .peas .label{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-dim); margin-bottom:4px;}
+  .peas .val{font-size:13px; color:var(--paper);}
+  @media (max-width:640px){.peas{grid-template-columns:repeat(2,1fr);} h1{font-size:28px;}}
+
+  section{margin-bottom:40px;}
+  .stage-head{display:flex; align-items:baseline; gap:10px; margin-bottom:14px;}
+  .stage-num{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--amber);
+    border:1px solid var(--amber); border-radius:50%; width:22px; height:22px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .stage-head h2{font-size:20px; font-weight:600; color:#f3efe4; margin:0;}
+  .stage-head .stage-sub{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim);}
+
+  /* ---------- Input form ---------- */
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .field{background:var(--panel); padding:16px;}
+  .field label{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--text-dim); margin-bottom:8px;
+  }
+  .field .row{display:flex; align-items:center; gap:12px;}
+  .field input[type=range]{flex:1; accent-color:var(--amber);}
+  .field .readout{
+    font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--paper);
+    width:70px; text-align:right; flex-shrink:0;
+  }
+  .field select{
+    width:100%; background:var(--ink); color:var(--paper); border:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace; font-size:13px; padding:8px; border-radius:3px;
+  }
+  @media (max-width:640px){.form-grid{grid-template-columns:1fr;}}
+
+  .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+  .chip{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim);
+    background:var(--panel-raised); border:1px solid var(--line);
+    padding:6px 12px; border-radius:20px; cursor:pointer;
+  }
+  .chip:hover{border-color:var(--amber); color:var(--paper);}
+
+  /* ---------- Sense readout ---------- */
+  .sense-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); margin-top:20px;
+  }
+  .sense-grid .stat{background:var(--panel); padding:14px;}
+  .sense-grid .stat .n{font-family:'IBM Plex Mono', monospace; font-size:18px; color:var(--paper); display:block;}
+  .sense-grid .stat .l{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-dim);}
+  @media (max-width:640px){.sense-grid{grid-template-columns:repeat(2,1fr);}}
+
+  /* ---------- Decide panel ---------- */
+  .rules{display:flex; flex-direction:column; gap:1px; background:var(--line); border:1px solid var(--line);}
+  .rule{background:var(--panel); padding:14px 16px; display:flex; gap:14px; align-items:flex-start; opacity:.4;}
+  .rule.fired{opacity:1; background:var(--panel-raised); border-left:3px solid var(--amber);}
+  .rule .rid{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim); flex-shrink:0; padding-top:1px;}
+  .rule.fired .rid{color:var(--amber);}
+  .rule .rtext{font-size:14px;}
+  .rule .rtext b{color:var(--paper);}
+
+  /* ---------- Verdict ---------- */
+  .verdict{margin-top:16px; padding:20px; border:1px solid var(--line);}
+  .verdict.allow{border-left:4px solid var(--teal);}
+  .verdict.flag{border-left:4px solid var(--amber);}
+  .verdict.block{border-left:4px solid var(--clay);}
+  .verdict .action{
+    font-family:'IBM Plex Mono', monospace; font-size:24px; font-weight:600; margin-bottom:6px;
+  }
+  .verdict.allow .action{color:var(--teal);}
+  .verdict.flag .action{color:var(--amber);}
+  .verdict.block .action{color:var(--clay);}
+  .verdict .label{font-size:16px; color:var(--paper); margin-bottom:8px;}
+  .verdict .why{font-size:14px; color:var(--text-dim); margin-bottom:10px;}
+  .verdict .effect{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim);
+    border-top:1px solid var(--line); padding-top:10px; margin-top:10px;
+  }
+
+  footer{
+    margin-top:64px; padding-top:24px; border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">SENSE <span class="arrow">→</span> DECIDE <span class="arrow">→</span> ACT</div>
+    <h1>An agent that watches traffic before it lets it through</h1>
+    <p class="lede">A rule-based agent inspects each connection's stats — failed logins, hosts contacted, transfer size, connection rate — and decides whether to allow, flag, or block it, using signatures of common attack patterns.</p>
+    <div class="peas">
+      <div><div class="label">ENVIRONMENT</div><div class="val">Network connection stream</div></div>
+      <div><div class="label">SENSORS</div><div class="val">Per-connection traffic stats</div></div>
+      <div><div class="label">ACTUATORS</div><div class="val">Allow / Flag / Block</div></div>
+      <div><div class="label">PERFORMANCE</div><div class="val">Detection vs. false positives</div></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="stage-head">
+      <span class="stage-num">1</span>
+      <h2>Sense</h2>
+      <span class="stage-sub">— adjust a connection's stats</span>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Duration (seconds)</label>
+        <div class="row"><input type="range" id="duration" min="0" max="120" step="0.5" value="3"><span class="readout" id="duration_r">3.0 s</span></div>
+      </div>
+      <div class="field">
+        <label>Bytes sent</label>
+        <div class="row"><input type="range" id="bytes_sent" min="0" max="10000000" step="1000" value="1500"><span class="readout" id="bytes_sent_r">1.5 KB</span></div>
+      </div>
+      <div class="field">
+        <label>Bytes received</label>
+        <div class="row"><input type="range" id="bytes_received" min="0" max="100000" step="500" value="42000"><span class="readout" id="bytes_received_r">42 KB</span></div>
+      </div>
+      <div class="field">
+        <label>Failed login attempts</label>
+        <div class="row"><input type="range" id="failed_logins" min="0" max="20" step="1" value="0"><span class="readout" id="failed_logins_r">0</span></div>
+      </div>
+      <div class="field">
+        <label>Distinct hosts contacted</label>
+        <div class="row"><input type="range" id="hosts" min="1" max="60" step="1" value="1"><span class="readout" id="hosts_r">1</span></div>
+      </div>
+      <div class="field">
+        <label>Connections / second</label>
+        <div class="row"><input type="range" id="rate" min="0" max="60" step="0.5" value="0.5"><span class="readout" id="rate_r">0.5</span></div>
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Destination port</label>
+        <select id="port">
+          <option value="443">443 (HTTPS)</option>
+          <option value="80">80 (HTTP)</option>
+          <option value="22">22 (SSH)</option>
+          <option value="21">21 (FTP)</option>
+          <option value="53">53 (DNS)</option>
+          <option value="4444">4444 (uncommon)</option>
+          <option value="8080">8080 (uncommon)</option>
+          <option value="31337">31337 (uncommon)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip" data-sample="normal">normal browsing</span>
+      <span class="chip" data-sample="brute">brute-force login</span>
+      <span class="chip" data-sample="scan">port scan</span>
+      <span class="chip" data-sample="exfil">data exfiltration</span>
+      <span class="chip" data-sample="dos">DoS flood</span>
+    </div>
+
+    <div class="sense-grid" id="senseOut"></div>
+  </section>
+
+  <section>
+    <div class="stage-head">
+      <span class="stage-num">2</span>
+      <h2>Decide</h2>
+      <span class="stage-sub">— a rule fires; the rest stay silent</span>
+    </div>
+    <div id="decideOut"></div>
+  </section>
+
+  <section>
+    <div class="stage-head">
+      <span class="stage-num">3</span>
+      <h2>Act</h2>
+      <span class="stage-sub">— the resulting action</span>
+    </div>
+    <div id="actOut"></div>
+  </section>
+
+  <footer>
+    FoAI case study — Intelligent Network Intrusion Detection Agent · runs entirely client-side, no data leaves this page. Synthetic data only.
+  </footer>
+</div>
+
+<script>
+const COMMON_PORTS = new Set([20,21,22,25,53,80,110,143,443,3306,5432]);
+
+const FAILED_LOGIN_THRESHOLD = 5;
+const SCAN_HOST_THRESHOLD = 15;
+const EXFIL_BYTES_THRESHOLD = 5_000_000;
+const FLOOD_RATE_THRESHOLD = 20;
+
+const SAMPLES = {
+  normal: {duration:3.1, bytes_sent:1500, bytes_received:42000, failed_logins:0, hosts:1, rate:0.4, port:443},
+  brute:  {duration:18,  bytes_sent:900,  bytes_received:600,   failed_logins:12,hosts:1, rate:1.2, port:22},
+  scan:   {duration:4.5, bytes_sent:300,  bytes_received:150,   failed_logins:0, hosts:42,rate:8.0, port:80},
+  exfil:  {duration:95,  bytes_sent:8500000, bytes_received:2000, failed_logins:0, hosts:1, rate:0.1, port:4444},
+  dos:    {duration:1,   bytes_sent:200,  bytes_received:0,     failed_logins:0, hosts:1, rate:48,  port:80},
+};
+
+const fields = ["duration","bytes_sent","bytes_received","failed_logins","hosts","rate"];
+
+function fmtBytes(n){
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(1) + " MB";
+  if (n >= 1000) return (n/1000).toFixed(1) + " KB";
+  return n + " B";
+}
+
+function readInputs(){
+  return {
+    duration_seconds: parseFloat(document.getElementById("duration").value),
+    bytes_sent: parseInt(document.getElementById("bytes_sent").value),
+    bytes_received: parseInt(document.getElementById("bytes_received").value),
+    failed_logins: parseInt(document.getElementById("failed_logins").value),
+    distinct_hosts_contacted: parseInt(document.getElementById("hosts").value),
+    connections_per_second: parseFloat(document.getElementById("rate").value),
+    dest_port: parseInt(document.getElementById("port").value),
+  };
+}
+
+function updateReadouts(){
+  document.getElementById("duration_r").textContent = document.getElementById("duration").value + " s";
+  document.getElementById("bytes_sent_r").textContent = fmtBytes(parseInt(document.getElementById("bytes_sent").value));
+  document.getElementById("bytes_received_r").textContent = fmtBytes(parseInt(document.getElementById("bytes_received").value));
+  document.getElementById("failed_logins_r").textContent = document.getElementById("failed_logins").value;
+  document.getElementById("hosts_r").textContent = document.getElementById("hosts").value;
+  document.getElementById("rate_r").textContent = document.getElementById("rate").value;
+}
+
+function decide(p){
+  const isCommonPort = COMMON_PORTS.has(p.dest_port);
+  const rules = [
+    {
+      id:"R1", label:`failed logins ≥ ${FAILED_LOGIN_THRESHOLD}`,
+      test: () => p.failed_logins >= FAILED_LOGIN_THRESHOLD,
+      action:"BLOCK", attackLabel:"Brute-force login attempt",
+      justify: () => `${p.failed_logins} failed login attempts (threshold ${FAILED_LOGIN_THRESHOLD}) — consistent with credential guessing.`
+    },
+    {
+      id:"R2", label:`distinct hosts contacted ≥ ${SCAN_HOST_THRESHOLD}`,
+      test: () => p.distinct_hosts_contacted >= SCAN_HOST_THRESHOLD,
+      action:"FLAG", attackLabel:"Network / port scan",
+      justify: () => `${p.distinct_hosts_contacted} distinct hosts contacted (threshold ${SCAN_HOST_THRESHOLD}) in a short window — consistent with a host/port sweep.`
+    },
+    {
+      id:"R3", label:`bytes sent ≥ 5 MB on an uncommon port`,
+      test: () => p.bytes_sent >= EXFIL_BYTES_THRESHOLD && !isCommonPort,
+      action:"FLAG", attackLabel:"Possible data exfiltration",
+      justify: () => `${fmtBytes(p.bytes_sent)} sent to uncommon port ${p.dest_port} — large outbound transfers on non-standard ports are a common exfiltration signature.`
+    },
+    {
+      id:"R4", label:`connection rate ≥ ${FLOOD_RATE_THRESHOLD}/s`,
+      test: () => p.connections_per_second >= FLOOD_RATE_THRESHOLD,
+      action:"FLAG", attackLabel:"Possible flood / DoS",
+      justify: () => `${p.connections_per_second.toFixed(1)} connections/second (threshold ${FLOOD_RATE_THRESHOLD}) — abnormally high connection rate.`
+    },
+    {
+      id:"R5", label:"default — no rule matched",
+      test: () => true,
+      action:"ALLOW", attackLabel:"Normal traffic",
+      justify: () => "No rule matched — stats fall within normal ranges."
+    }
+  ];
+  for (const r of rules){
+    if (r.test()) return {fired:r.id, rules, action:r.action, attackLabel:r.attackLabel, justification:r.justify()};
+  }
+}
+
+const EFFECTS = {
+  ALLOW: "Connection permitted, no alert raised.",
+  FLAG: "Connection permitted but logged for analyst review; alert raised.",
+  BLOCK: "Connection terminated immediately; source added to watch list.",
+};
+
+function render(){
+  const p = readInputs();
+  const d = decide(p);
+
+  document.getElementById("senseOut").innerHTML = `
+    <div class="stat"><span class="n">${p.duration_seconds}s</span><span class="l">DURATION</span></div>
+    <div class="stat"><span class="n">${fmtBytes(p.bytes_sent)}</span><span class="l">SENT</span></div>
+    <div class="stat"><span class="n">${p.distinct_hosts_contacted}</span><span class="l">HOSTS CONTACTED</span></div>
+    <div class="stat"><span class="n">${p.connections_per_second}/s</span><span class="l">CONN. RATE</span></div>
+  `;
+
+  document.getElementById("decideOut").innerHTML = `
+    <div class="rules">
+      ${d.rules.map(r => `
+        <div class="rule ${r.id===d.fired?'fired':''}">
+          <span class="rid">${r.id}</span>
+          <span class="rtext">${r.id===d.fired?'<b>fired →</b> ':''}${r.label}</span>
+        </div>`).join("")}
+    </div>
+  `;
+
+  const verdictClass = d.action.toLowerCase();
+  document.getElementById("actOut").innerHTML = `
+    <div class="verdict ${verdictClass}">
+      <div class="action">${d.action}</div>
+      <div class="label">${d.attackLabel}</div>
+      <div class="why">${d.justification}</div>
+      <div class="effect">${EFFECTS[d.action]}</div>
+    </div>
+  `;
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", () => { updateReadouts(); render(); });
+});
+
+document.querySelectorAll(".chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const s = SAMPLES[chip.dataset.sample];
+    document.getElementById("duration").value = s.duration;
+    document.getElementById("bytes_sent").value = s.bytes_sent;
+    document.getElementById("bytes_received").value = s.bytes_received;
+    document.getElementById("failed_logins").value = s.failed_logins;
+    document.getElementById("hosts").value = s.hosts;
+    document.getElementById("rate").value = s.rate;
+    document.getElementById("port").value = s.port;
+    updateReadouts();
+    render();
+  });
+});
+
+updateReadouts();
+render();
+</script>
+</body>
+</html>
